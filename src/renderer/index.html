@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Atlas Wallet Desktop</title>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        margin: 0;
+        padding: 0;
+        background: #050816;
+        color: #f1f5f9;
+      }
+      header {
+        padding: 16px 24px;
+        background: #020617;
+        border-bottom: 1px solid #1e293b;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+      }
+      main {
+        padding: 24px;
+        max-width: 960px;
+        margin: 0 auto;
+      }
+      .card {
+        background: #020617;
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 20px;
+        border: 1px solid #1e293b;
+        box-shadow: 0 18px 45px rgba(15, 23, 42, 0.7);
+      }
+      .row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+      }
+      .col {
+        flex: 1 1 260px;
+      }
+      .label {
+        font-size: 13px;
+        color: #94a3b8;
+        margin-bottom: 4px;
+      }
+      input,
+      textarea {
+        width: 100%;
+        padding: 8px 10px;
+        border-radius: 8px;
+        border: 1px solid #1f2937;
+        background: #020617;
+        color: #e5e7eb;
+        font-size: 14px;
+        box-sizing: border-box;
+      }
+      textarea {
+        min-height: 72px;
+        resize: vertical;
+      }
+      button {
+        background: linear-gradient(135deg, #f97316, #facc15);
+        border: none;
+        color: #111827;
+        padding: 10px 16px;
+        border-radius: 999px;
+        font-weight: 600;
+        cursor: pointer;
+        font-size: 14px;
+      }
+      button.secondary {
+        background: transparent;
+        color: #e5e7eb;
+        border: 1px solid #1e293b;
+      }
+      button:disabled {
+        opacity: 0.6;
+        cursor: default;
+      }
+      .title {
+        font-size: 22px;
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+      .subtitle {
+        font-size: 13px;
+        color: #94a3b8;
+      }
+      .status {
+        font-size: 13px;
+        margin-top: 8px;
+      }
+      .status.error {
+        color: #fca5a5;
+      }
+      .status.success {
+        color: #bbf7d0;
+      }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: rgba(148, 163, 184, 0.16);
+        font-size: 12px;
+        border: 1px solid rgba(30, 41, 59, 0.7);
+      }
+      .address-box {
+        font-family: 'SF Mono', Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+        font-size: 13px;
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid #1e293b;
+        background: #020617;
+        word-break: break-all;
+      }
+      .tabs {
+        display: inline-flex;
+        padding: 4px;
+        border-radius: 999px;
+        background: #020617;
+        border: 1px solid #1e293b;
+        margin-bottom: 12px;
+      }
+      .tab {
+        border-radius: 999px;
+        padding: 6px 14px;
+        font-size: 13px;
+        cursor: pointer;
+        border: none;
+        background: transparent;
+        color: #9ca3af;
+      }
+      .tab.active {
+        background: #0f172a;
+        color: #f9fafb;
+      }
+      .hidden {
+        display: none;
+      }
+      .mnemonic {
+        font-family: 'SF Mono', Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+        font-size: 13px;
+        padding: 12px;
+        border-radius: 12px;
+        border: 1px solid #1e293b;
+        background: #0b1224;
+        word-break: break-word;
+        line-height: 1.55;
+        user-select: text;
+      }
+      .warn {
+        border: 1px solid rgba(250, 204, 21, 0.35);
+        background: rgba(250, 204, 21, 0.08);
+        color: #fde68a;
+        padding: 10px 12px;
+        border-radius: 12px;
+        font-size: 13px;
+      }
+      .divider {
+        height: 1px;
+        background: rgba(30, 41, 59, 0.8);
+        margin: 14px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div>
+        <div style="font-weight:600;">Atlas Wallet</div>
+        <div style="font-size:12px;color:#64748b;">Desktop · não custodial</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="secondary" id="btnLock" style="display:none;">Bloquear</button>
+        <div class="pill" id="sessionStatusPill">
+          <span id="sessionStatusText">Verificando...</span>
+        </div>
+      </div>
+    </header>
+    <main>
+      <section class="card" id="unlockCard" style="display:none;">
+        <div class="title">Desbloquear carteira</div>
+        <div class="subtitle">A carteira existe neste computador, mas está bloqueada.</div>
+        <div class="row" style="margin-top:12px;">
+          <div class="col">
+            <div class="label">Senha</div>
+            <input type="password" id="unlockPassword" />
+          </div>
+          <div class="col">
+            <div class="label">Tempo desbloqueada (minutos)</div>
+            <input type="number" id="unlockTtl" min="1" step="1" value="5" />
+          </div>
+        </div>
+        <div style="margin-top:16px;display:flex;gap:8px;">
+          <button id="btnUnlock">Desbloquear</button>
+          <button class="secondary" id="btnGoOnboarding">Criar/Restaurar outra</button>
+        </div>
+        <div id="unlockStatus" class="status"></div>
+      </section>
+
+      <section class="card" id="onboardingCard" style="display:none;">
+        <div class="title">Começar</div>
+        <div class="subtitle">Crie uma nova carteira ou restaure usando sua seed phrase.</div>
+        <div style="margin-top:16px;" class="tabs">
+          <button class="tab active" id="tabCreate">Criar carteira</button>
+          <button class="tab" id="tabRestore">Restaurar</button>
+        </div>
+
+        <div id="createView">
+          <div class="row">
+            <div class="col">
+              <div class="label">Defina uma senha (protege o arquivo local)</div>
+              <input type="password" id="createPassword" placeholder="Mínimo 8 caracteres" />
+            </div>
+          </div>
+
+          <div style="margin-top:16px;display:flex;gap:8px;align-items:center;">
+            <button id="btnCreateWallet">Gerar frase de recuperação</button>
+          </div>
+
+          <div id="createStatus" class="status"></div>
+
+          <div id="createStepMnemonic" style="display:none;margin-top:14px;">
+            <div class="warn">
+              Esta é sua <b>frase de recuperação (seed)</b>. Anote em papel e guarde em local seguro.
+              <b>Nunca tire print</b> e <b>nunca envie</b> para ninguém.
+            </div>
+            <div style="margin-top:10px;" class="mnemonic" id="mnemonicContainer"></div>
+            <div class="divider"></div>
+            <div class="subtitle">Para confirmar que você anotou, digite as palavras pedidas abaixo.</div>
+            <div class="row" style="margin-top:10px;" id="confirmRow"></div>
+            <div style="margin-top:14px;display:flex;gap:8px;align-items:center;">
+              <button id="btnFinalizeCreate">Confirmar e salvar</button>
+              <button class="secondary" id="btnCancelCreate">Cancelar</button>
+            </div>
+            <div id="finalizeStatus" class="status"></div>
+          </div>
+        </div>
+
+        <div id="restoreView" class="hidden">
+          <div class="row">
+            <div class="col">
+              <div class="label">Seed phrase (12 ou 24 palavras)</div>
+              <textarea id="restoreMnemonic" placeholder="palavra1 palavra2 ..."></textarea>
+            </div>
+          </div>
+          <div class="row" style="margin-top:8px;">
+            <div class="col">
+              <div class="label">Senha para proteger localmente</div>
+              <input type="password" id="restorePassword" />
+            </div>
+          </div>
+          <div style="margin-top:16px;display:flex;gap:8px;align-items:center;">
+            <button id="btnRestoreWallet">Restaurar carteira</button>
+          </div>
+          <div id="restoreStatus" class="status"></div>
+        </div>
+      </section>
+
+      <section class="card" id="walletCard" style="display:none;">
+        <div class="title">Carteira</div>
+        <div class="subtitle">Saldo e endereço principal.</div>
+        <div class="row" style="margin-top:16px;">
+          <div class="col">
+            <div class="label">Saldo</div>
+            <div style="font-size:26px;font-weight:600;" id="balanceValue">-- BTC</div>
+            <div class="status" id="balanceStatus"></div>
+          </div>
+          <div class="col">
+            <div class="label">Endereço Bitcoin</div>
+            <div class="address-box" id="addressBox">--</div>
+            <div style="margin-top:8px;display:flex;gap:8px;">
+              <button class="secondary" id="btnCopyAddress">Copiar</button>
+              <button class="secondary" id="btnRefreshBalance">Atualizar saldo</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card" id="sendCard" style="display:none;">
+        <div class="title">Enviar BTC</div>
+        <div class="subtitle">Para enviar, a carteira precisa estar desbloqueada.</div>
+        <div class="row" style="margin-top:12px;">
+          <div class="col">
+            <div class="label">Endereço de destino</div>
+            <input id="sendTo" placeholder="Endereço Bitcoin (bech32, legacy...)" />
+          </div>
+        </div>
+        <div class="row" style="margin-top:8px;">
+          <div class="col">
+            <div class="label">Valor (BTC)</div>
+            <input id="sendAmountBtc" type="number" step="0.00000001" min="0" />
+          </div>
+          <div class="col">
+            <div class="label">Fee rate (sats/vbyte)</div>
+            <input id="sendFeeRate" type="number" step="1" min="1" value="5" />
+          </div>
+        </div>
+        <div style="margin-top:16px;">
+          <button id="btnSend">Enviar</button>
+        </div>
+        <div id="sendStatus" class="status"></div>
+      </section>
+    </main>
+    <script>
+      const sessionStatusText = document.getElementById('sessionStatusText');
+      const btnLock = document.getElementById('btnLock');
+
+      const unlockCard = document.getElementById('unlockCard');
+      const unlockPassword = document.getElementById('unlockPassword');
+      const unlockTtl = document.getElementById('unlockTtl');
+      const btnUnlock = document.getElementById('btnUnlock');
+      const btnGoOnboarding = document.getElementById('btnGoOnboarding');
+      const unlockStatus = document.getElementById('unlockStatus');
+
+      const onboardingCard = document.getElementById('onboardingCard');
+      const tabCreate = document.getElementById('tabCreate');
+      const tabRestore = document.getElementById('tabRestore');
+      const createView = document.getElementById('createView');
+      const restoreView = document.getElementById('restoreView');
+
+      const createPassword = document.getElementById('createPassword');
+      const btnCreateWallet = document.getElementById('btnCreateWallet');
+      const createStatus = document.getElementById('createStatus');
+      const createStepMnemonic = document.getElementById('createStepMnemonic');
+      const mnemonicContainer = document.getElementById('mnemonicContainer');
+      const confirmRow = document.getElementById('confirmRow');
+      const btnFinalizeCreate = document.getElementById('btnFinalizeCreate');
+      const btnCancelCreate = document.getElementById('btnCancelCreate');
+      const finalizeStatus = document.getElementById('finalizeStatus');
+
+      const restoreMnemonic = document.getElementById('restoreMnemonic');
+      const restorePassword = document.getElementById('restorePassword');
+      const btnRestoreWallet = document.getElementById('btnRestoreWallet');
+      const restoreStatus = document.getElementById('restoreStatus');
+
+      const walletCard = document.getElementById('walletCard');
+      const sendCard = document.getElementById('sendCard');
+      const addressBox = document.getElementById('addressBox');
+      const balanceValue = document.getElementById('balanceValue');
+      const balanceStatus = document.getElementById('balanceStatus');
+      const btnCopyAddress = document.getElementById('btnCopyAddress');
+      const btnRefreshBalance = document.getElementById('btnRefreshBalance');
+
+      const sendTo = document.getElementById('sendTo');
+      const sendAmountBtc = document.getElementById('sendAmountBtc');
+      const sendFeeRate = document.getElementById('sendFeeRate');
+      const btnSend = document.getElementById('btnSend');
+      const sendStatus = document.getElementById('sendStatus');
+
+      let lastCreateConfirmPositions = null;
+
+      function setSessionStatus(text) {
+        sessionStatusText.textContent = text;
+      }
+
+      function showOnly(which) {
+        unlockCard.style.display = which === 'unlock' ? 'block' : 'none';
+        onboardingCard.style.display = which === 'onboarding' ? 'block' : 'none';
+        walletCard.style.display = which === 'wallet' ? 'block' : 'none';
+        sendCard.style.display = which === 'wallet' ? 'block' : 'none';
+        btnLock.style.display = which === 'wallet' ? 'inline-flex' : 'none';
+      }
+
+      async function boot() {
+        try {
+          const saved = await window.walletApi.hasSavedWallet();
+          const unlocked = await window.walletApi.isUnlocked();
+
+          if (saved && saved.hasSaved) {
+            if (unlocked && unlocked.unlocked) {
+              setSessionStatus('Carteira desbloqueada');
+              showOnly('wallet');
+              await refreshAddressAndBalance();
+            } else {
+              setSessionStatus('Carteira bloqueada');
+              showOnly('unlock');
+            }
+          } else {
+            setSessionStatus('Nenhuma carteira salva');
+            showOnly('onboarding');
+          }
+        } catch (e) {
+          setSessionStatus('Erro ao iniciar');
+          showOnly('onboarding');
+        }
+      }
+
+      btnGoOnboarding.addEventListener('click', () => {
+        showOnly('onboarding');
+      });
+
+      tabCreate.addEventListener('click', () => {
+        tabCreate.classList.add('active');
+        tabRestore.classList.remove('active');
+        createView.classList.remove('hidden');
+        restoreView.classList.add('hidden');
+      });
+
+      tabRestore.addEventListener('click', () => {
+        tabRestore.classList.add('active');
+        tabCreate.classList.remove('active');
+        restoreView.classList.remove('hidden');
+        createView.classList.add('hidden');
+      });
+
+      btnUnlock.addEventListener('click', async () => {
+        unlockStatus.textContent = '';
+        unlockStatus.className = 'status';
+        const pass = unlockPassword.value.trim();
+        const ttl = Number(unlockTtl.value || '5');
+        if (pass.length < 8) {
+          unlockStatus.textContent = 'A senha deve ter pelo menos 8 caracteres.';
+          unlockStatus.classList.add('error');
+          return;
+        }
+        btnUnlock.disabled = true;
+        unlockStatus.textContent = 'Desbloqueando...';
+        try {
+          const result = await window.walletApi.unlockWallet(pass, ttl);
+          if (result && result.success) {
+            setSessionStatus('Carteira desbloqueada');
+            showOnly('wallet');
+            await refreshAddressAndBalance();
+          } else {
+            unlockStatus.textContent = (result && result.error) || 'Falha ao desbloquear.';
+            unlockStatus.classList.add('error');
+          }
+        } catch (e) {
+          unlockStatus.textContent = 'Erro ao desbloquear.';
+          unlockStatus.classList.add('error');
+        } finally {
+          btnUnlock.disabled = false;
+        }
+      });
+
+      btnLock.addEventListener('click', async () => {
+        await window.walletApi.lockWallet();
+        setSessionStatus('Carteira bloqueada');
+        showOnly('unlock');
+      });
+
+      btnCreateWallet.addEventListener('click', async () => {
+        const password = createPassword.value.trim();
+        createStatus.textContent = '';
+        finalizeStatus.textContent = '';
+        createStatus.className = 'status';
+        finalizeStatus.className = 'status';
+
+        if (password.length < 8) {
+          createStatus.textContent = 'A senha deve ter pelo menos 8 caracteres.';
+          createStatus.classList.add('error');
+          return;
+        }
+
+        btnCreateWallet.disabled = true;
+        createStatus.textContent = 'Gerando frase de recuperação...';
+
+        try {
+          const result = await window.walletApi.createWallet(password);
+          if (result && result.mnemonic && result.confirmPositions) {
+            mnemonicContainer.textContent = result.mnemonic;
+            lastCreateConfirmPositions = result.confirmPositions;
+            confirmRow.innerHTML = '';
+
+            for (const pos of result.confirmPositions) {
+              const div = document.createElement('div');
+              div.className = 'col';
+              div.innerHTML =
+                '<div class="label">Palavra #' +
+                pos +
+                '</div><input data-pos="' +
+                pos +
+                '" placeholder="Digite a palavra #' +
+                pos +
+                '" />';
+              confirmRow.appendChild(div);
+            }
+
+            createStepMnemonic.style.display = 'block';
+            createStatus.textContent = 'Anote a frase e confirme as palavras abaixo para salvar.';
+            createStatus.classList.add('success');
+          } else {
+            createStatus.textContent = 'Não foi possível gerar a frase de recuperação.';
+            createStatus.classList.add('error');
+          }
+        } catch (e) {
+          createStatus.textContent = 'Erro ao gerar a frase de recuperação.';
+          createStatus.classList.add('error');
+        } finally {
+          btnCreateWallet.disabled = false;
+        }
+      });
+
+      btnCancelCreate.addEventListener('click', () => {
+        mnemonicContainer.textContent = '';
+        confirmRow.innerHTML = '';
+        createStepMnemonic.style.display = 'none';
+        finalizeStatus.textContent = '';
+        lastCreateConfirmPositions = null;
+      });
+
+      btnFinalizeCreate.addEventListener('click', async () => {
+        finalizeStatus.textContent = '';
+        finalizeStatus.className = 'status';
+
+        const password = createPassword.value.trim();
+        if (password.length < 8) {
+          finalizeStatus.textContent = 'Senha inválida.';
+          finalizeStatus.classList.add('error');
+          return;
+        }
+        if (!lastCreateConfirmPositions) {
+          finalizeStatus.textContent = 'Nenhuma criação pendente.';
+          finalizeStatus.classList.add('error');
+          return;
+        }
+
+        const inputs = Array.from(confirmRow.querySelectorAll('input[data-pos]'));
+        const confirmations = inputs.map((input) => ({
+          position: Number(input.getAttribute('data-pos')),
+          word: String(input.value || '').trim()
+        }));
+
+        btnFinalizeCreate.disabled = true;
+        finalizeStatus.textContent = 'Salvando carteira...';
+        try {
+          const result = await window.walletApi.finalizeCreate(password, confirmations);
+          if (result && result.success) {
+            finalizeStatus.textContent = 'Carteira salva e desbloqueada com sucesso.';
+            finalizeStatus.classList.add('success');
+
+            // Limpa frase da tela após salvar
+            mnemonicContainer.textContent = '';
+            confirmRow.innerHTML = '';
+            createStepMnemonic.style.display = 'none';
+
+            setSessionStatus('Carteira desbloqueada');
+            showOnly('wallet');
+            await refreshAddressAndBalance();
+          } else {
+            finalizeStatus.textContent = (result && result.error) || 'Falha ao salvar.';
+            finalizeStatus.classList.add('error');
+          }
+        } catch (e) {
+          finalizeStatus.textContent = 'Erro ao salvar carteira.';
+          finalizeStatus.classList.add('error');
+        } finally {
+          btnFinalizeCreate.disabled = false;
+        }
+      });
+
+      btnRestoreWallet.addEventListener('click', async () => {
+        const mnemonic = restoreMnemonic.value.trim();
+        const password = restorePassword.value.trim();
+        restoreStatus.textContent = '';
+        restoreStatus.className = 'status';
+
+        if (!mnemonic) {
+          restoreStatus.textContent = 'Informe a seed phrase.';
+          restoreStatus.classList.add('error');
+          return;
+        }
+        if (password.length < 8) {
+          restoreStatus.textContent = 'A senha deve ter pelo menos 8 caracteres.';
+          restoreStatus.classList.add('error');
+          return;
+        }
+
+        btnRestoreWallet.disabled = true;
+        restoreStatus.textContent = 'Restaurando carteira...';
+
+        try {
+          const result = await window.walletApi.restoreWallet(mnemonic, password);
+          if (result && result.success) {
+            restoreStatus.textContent = 'Carteira restaurada e salva com sucesso.';
+            restoreStatus.classList.add('success');
+            setSessionStatus('Carteira desbloqueada');
+            showOnly('wallet');
+            await refreshAddressAndBalance();
+          } else {
+            restoreStatus.textContent = (result && result.error) || 'Falha ao restaurar carteira.';
+            restoreStatus.classList.add('error');
+          }
+        } catch (err) {
+          restoreStatus.textContent = 'Erro ao restaurar carteira.';
+          restoreStatus.classList.add('error');
+        } finally {
+          btnRestoreWallet.disabled = false;
+        }
+      });
+
+      btnCopyAddress.addEventListener('click', async () => {
+        if (!addressBox.textContent || addressBox.textContent === '--') return;
+        try {
+          await navigator.clipboard.writeText(addressBox.textContent);
+        } catch {
+          // ignora
+        }
+      });
+
+      btnRefreshBalance.addEventListener('click', async () => {
+        await refreshAddressAndBalance();
+      });
+
+      async function refreshAddressAndBalance() {
+        balanceStatus.textContent = 'Carregando...';
+        try {
+          const address = await window.walletApi.getAddress();
+          addressBox.textContent = address || '--';
+          const balance = await window.walletApi.getBalance();
+          if (typeof balance === 'number') {
+            const btc = balance / 1e8;
+            balanceValue.textContent = btc.toFixed(8) + ' BTC';
+            balanceStatus.textContent = 'Saldo atualizado.';
+          } else {
+            balanceStatus.textContent = 'Não foi possível obter o saldo.';
+          }
+        } catch (err) {
+          balanceStatus.textContent = 'Carteira bloqueada/expirada. Desbloqueie novamente.';
+          await window.walletApi.lockWallet();
+          setSessionStatus('Carteira bloqueada');
+          showOnly('unlock');
+        }
+      }
+
+      btnSend.addEventListener('click', async () => {
+        const to = sendTo.value.trim();
+        const amountBtc = Number(sendAmountBtc.value);
+        const feeRate = Number(sendFeeRate.value || '1');
+
+        sendStatus.textContent = '';
+        sendStatus.className = 'status';
+
+        if (!to) {
+          sendStatus.textContent = 'Informe o endereço de destino.';
+          sendStatus.classList.add('error');
+          return;
+        }
+        if (!amountBtc || amountBtc <= 0) {
+          sendStatus.textContent = 'Informe um valor em BTC maior que zero.';
+          sendStatus.classList.add('error');
+          return;
+        }
+
+        const confirmText =
+          'Você está prestes a enviar ' +
+          amountBtc.toFixed(8) +
+          ' BTC para:\n\n' +
+          to +
+          '\n\nConfirme apenas se tiver certeza.';
+        if (!window.confirm(confirmText)) return;
+
+        btnSend.disabled = true;
+        sendStatus.textContent = 'Montando e enviando transação...';
+
+        try {
+          const amountSats = Math.round(amountBtc * 1e8);
+          const result = await window.walletApi.sendTransaction(to, amountSats, feeRate);
+          if (result && result.txId) {
+            sendStatus.textContent = 'Transação enviada. TXID: ' + result.txId;
+            sendStatus.classList.add('success');
+            await refreshAddressAndBalance();
+          } else {
+            sendStatus.textContent = (result && result.error) || 'Falha ao enviar transação.';
+            sendStatus.classList.add('error');
+          }
+        } catch (err) {
+          sendStatus.textContent = 'Carteira bloqueada/expirada. Desbloqueie novamente.';
+          sendStatus.classList.add('error');
+          await window.walletApi.lockWallet();
+          setSessionStatus('Carteira bloqueada');
+          showOnly('unlock');
+        } finally {
+          btnSend.disabled = false;
+        }
+      });
+
+      boot();
+    </script>
+  </body>
+</html>
+
