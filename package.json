@@ -1,0 +1,40 @@
+{
+  "name": "atlas-wallet",
+  "version": "1.0.0",
+  "description": "Wallet desktop simples de Bitcoin em Electron + TypeScript.",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "tsc && node scripts/copyRenderer.mjs",
+    "dev": "concurrently \"tsc -w\" \"electron .\"",
+    "start": "electron .",
+    "dist": "npm run build && electron-builder"
+  },
+  "dependencies": {
+    "axios": "*",
+    "bip32": "*",
+    "bip39": "*",
+    "bitcoinjs-lib": "*",
+    "ecpair": "*",
+    "tiny-secp256k1": "*"
+  },
+  "devDependencies": {
+    "@types/node": "*",
+    "concurrently": "*",
+    "electron": "*",
+    "electron-builder": "*",
+    "typescript": "*"
+  },
+  "build": {
+    "appId": "com.example.atlaswallet",
+    "productName": "Atlas Wallet",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*"
+    ],
+    "win": {
+      "target": "nsis"
+    }
+  }
+}
